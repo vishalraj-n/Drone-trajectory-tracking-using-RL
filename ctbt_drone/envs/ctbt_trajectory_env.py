@@ -65,6 +65,10 @@ class CTBTTrajectoryEnvCfg(DirectRLEnvCfg):
     # Inference can set this to a non-negative bank index to follow one entry.
     trajectory_index = -1
     trajectory_loop = False
+    # Evaluation may use a shorter bank than the requested playback duration.
+    # In that case, clamp to the final waypoint instead of wrapping to the
+    # beginning and creating a discontinuous target.
+    allow_trajectory_hold = False
     # Training can generate a fresh randomized quintic spline at every reset.
     # Evaluation/playback explicitly disable this and use trajectory_path.
     online_trajectory_generation = False
@@ -119,7 +123,7 @@ class CTBTTrajectoryEnv(DirectRLEnv):
         loaded_bank = self._load_bank(cfg.trajectory_path).to(self.device)
         self._bank_count, self._trajectory_length, _ = loaded_bank.shape
         required_length = cfg.trajectory_horizon + int(cfg.episode_length_s / self.step_dt)
-        if not cfg.trajectory_loop and self._trajectory_length <= required_length:
+        if not cfg.trajectory_loop and not cfg.allow_trajectory_hold and self._trajectory_length <= required_length:
             raise ValueError("Trajectory bank entries must outlive an entire episode plus the CNN horizon")
         if cfg.trajectory_index >= self._bank_count:
             raise IndexError(

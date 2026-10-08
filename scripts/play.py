@@ -97,7 +97,13 @@ def main() -> None:
         env_cfg.trajectory_index = int(matches[0])
     else:
         env_cfg.trajectory_index = -1
-    env_cfg.trajectory_loop = True
+    # The bundled test bank contains roughly 16 seconds of samples while the
+    # default playback is 20 seconds.  Do not wrap sample N back to sample 0:
+    # that would create a discontinuous target and make the drone appear to
+    # teleport.  The environment holds the final waypoint until the episode
+    # ends.  Set this to True only for a deliberately seamless periodic bank.
+    env_cfg.trajectory_loop = False
+    env_cfg.allow_trajectory_hold = True
     env_cfg.online_trajectory_generation = False
     env_cfg.terminate_on_crash = False
     env_cfg.seed = args.seed
