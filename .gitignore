@@ -1,0 +1,27 @@
+# Local Isaac Lab/Isaac Sim artifacts
+assets/cache/
+reference papers/
+logs/
+*.usd
+*.usda
+*.usdc
+
+# Python and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local IDE and environment files
+.vscode/
+.idea/
+.codex/
+.agents/
+*.swp
+
+# Generated evaluation output
+evaluation.csv
+
+# Keep public demo media and selected checkpoints; ignore other experiments.
+checkpoints/*
+!checkpoints/model_250.pt
