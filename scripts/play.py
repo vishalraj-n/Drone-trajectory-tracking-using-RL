@@ -30,7 +30,12 @@ parser.add_argument(
     default="random",
     help="Select the first bank entry from this family, or randomize when set to random.",
 )
-parser.add_argument("--episode_seconds", type=float, default=20.0)
+parser.add_argument(
+    "--episode_seconds",
+    type=float,
+    default=20.0,
+    help="Nominal trajectory duration used for reporting; ignored in --run_forever mode.",
+)
 parser.add_argument("--num_envs", type=int, default=1)
 parser.add_argument("--seed", type=int, default=123)
 parser.add_argument("--real_time", action="store_true")
@@ -39,6 +44,12 @@ parser.add_argument("--top_view", action="store_true", help="Use a top-down came
 parser.add_argument("--trail_points", type=int, default=300, help="Number of actual-path marker points.")
 parser.add_argument("--reference_stride", type=int, default=4, help="Stride used to draw the reference path.")
 parser.add_argument("--episodes", type=int, default=1, help="Number of episodes to visualize before exiting.")
+parser.add_argument(
+    "--run_forever",
+    action=argparse.BooleanOptionalAction,
+    default=True,
+    help="Repeat the closed trajectory until Isaac Sim is closed (default: enabled).",
+)
 parser.add_argument("--video", action="store_true", help="Save the first inference episode as an MP4 video.")
 parser.add_argument(
     "--video_dir",
@@ -83,7 +94,10 @@ def main() -> None:
     if isinstance(bank_data, np.lib.npyio.NpzFile) and "family_ids" in bank_data.files:
         family_ids = np.asarray(bank_data["family_ids"]).astype(str)
     env_cfg = CTBTTrajectoryEnvCfg()
-    env_cfg.episode_length_s = args.episode_seconds
+    # A trajectory can be periodic for many cycles.  Keep the environment in
+    # one episode during playback so DirectRLEnv does not reset the aircraft
+    # to the first waypoint every 20 seconds.
+    env_cfg.episode_length_s = 1_000_000.0 if args.run_forever else args.episode_seconds
     env_cfg.scene.num_envs = args.num_envs
     env_cfg.trajectory_path = str(bank_path)
     if args.trajectory_index is not None:
@@ -97,13 +111,11 @@ def main() -> None:
         env_cfg.trajectory_index = int(matches[0])
     else:
         env_cfg.trajectory_index = -1
-    # The bundled test bank contains roughly 16 seconds of samples while the
-    # default playback is 20 seconds.  Do not wrap sample N back to sample 0:
-    # that would create a discontinuous target and make the drone appear to
-    # teleport.  The environment holds the final waypoint until the episode
-    # ends.  Set this to True only for a deliberately seamless periodic bank.
-    env_cfg.trajectory_loop = False
-    env_cfg.allow_trajectory_hold = True
+    # Inference uses the selected closed trajectory as a periodic reference.
+    # Because run_forever keeps one environment episode alive, wrapping the
+    # reference does not reset or teleport the drone state.
+    env_cfg.trajectory_loop = args.run_forever
+    env_cfg.allow_trajectory_hold = not args.run_forever
     env_cfg.online_trajectory_generation = False
     env_cfg.terminate_on_crash = False
     env_cfg.seed = args.seed
