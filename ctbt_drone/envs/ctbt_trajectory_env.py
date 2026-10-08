@@ -22,7 +22,7 @@ from isaaclab.utils.math import euler_xyz_from_quat, quat_apply_inverse, quat_fr
 from isaaclab_assets import CRAZYFLIE_CFG
 
 from ctbt_drone.dynamics import QuadrotorGeometry, project_ctbt_to_rotor_thrust, rotor_thrust_to_body_torque
-from ctbt_drone.trajectories.generators import feasible, random_waypoint_spline
+from ctbt_drone.trajectories.generators import CLOSED_GENERATORS, feasible, random_waypoint_spline
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -69,6 +69,7 @@ class CTBTTrajectoryEnvCfg(DirectRLEnvCfg):
     # In that case, clamp to the final waypoint instead of wrapping to the
     # beginning and creating a discontinuous target.
     allow_trajectory_hold = False
+    closed_trajectory_family = ""
     # Training can generate a fresh randomized quintic spline at every reset.
     # Evaluation/playback explicitly disable this and use trajectory_path.
     online_trajectory_generation = False
@@ -138,6 +139,18 @@ class CTBTTrajectoryEnv(DirectRLEnv):
             self._bank_count = self.num_envs
         else:
             self._trajectory_bank = loaded_bank
+        if cfg.closed_trajectory_family:
+            generator = CLOSED_GENERATORS.get(cfg.closed_trajectory_family)
+            if generator is None:
+                raise ValueError(
+                    f"No closed inference generator for {cfg.closed_trajectory_family!r}; "
+                    f"choose one of {sorted(CLOSED_GENERATORS)}"
+                )
+            if cfg.trajectory_index < 0:
+                raise ValueError("closed_trajectory_family requires a fixed trajectory_index")
+            rng = np.random.default_rng(cfg.seed + 7919 * cfg.trajectory_index)
+            generated = generator(rng, self._trajectory_length, self.step_dt)
+            self._trajectory_bank[cfg.trajectory_index] = torch.as_tensor(generated, device=self.device)
         self._trajectory_ids = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self._trajectory_offsets = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self._trajectory_reset_counts = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)

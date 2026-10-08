@@ -116,6 +116,8 @@ def main() -> None:
     # reference does not reset or teleport the drone state.
     env_cfg.trajectory_loop = args.run_forever
     env_cfg.allow_trajectory_hold = not args.run_forever
+    if args.run_forever and args.trajectory_type in {"circle", "figure8", "spline"}:
+        env_cfg.closed_trajectory_family = args.trajectory_type
     env_cfg.online_trajectory_generation = False
     env_cfg.terminate_on_crash = False
     env_cfg.seed = args.seed

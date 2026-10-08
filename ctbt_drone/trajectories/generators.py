@@ -37,6 +37,30 @@ def figure_eight(rng: np.random.Generator, length: int, dt: float) -> np.ndarray
     return _derivatives(position, dt)
 
 
+def closed_circle(rng: np.random.Generator, length: int, dt: float) -> np.ndarray:
+    """Generate one exactly closed circle over the available sample window."""
+    period = max((length - 1) * dt, dt)
+    t = np.linspace(0.0, period, length, dtype=np.float32)
+    radius = rng.uniform(0.20, 0.65)
+    phase = rng.uniform(-np.pi, np.pi)
+    center = np.array((rng.uniform(-0.35, 0.35), rng.uniform(-0.35, 0.35), rng.uniform(0.65, 1.15)))
+    angle = 2.0 * np.pi * t / period + phase
+    position = center + np.stack((radius * np.cos(angle), radius * np.sin(angle), np.zeros_like(t)), axis=-1)
+    return _derivatives(position, dt)
+
+
+def closed_figure_eight(rng: np.random.Generator, length: int, dt: float) -> np.ndarray:
+    """Generate one exactly closed figure-eight over the sample window."""
+    period = max((length - 1) * dt, dt)
+    t = np.linspace(0.0, period, length, dtype=np.float32)
+    radius = rng.uniform(0.20, 0.60)
+    phase = rng.uniform(-np.pi, np.pi)
+    center = np.array((rng.uniform(-0.35, 0.35), rng.uniform(-0.35, 0.35), rng.uniform(0.65, 1.15)))
+    angle = 2.0 * np.pi * t / period + phase
+    position = center + np.stack((radius * np.sin(angle), 0.5 * radius * np.sin(2.0 * angle), np.zeros_like(t)), axis=-1)
+    return _derivatives(position, dt)
+
+
 def lissajous(rng: np.random.Generator, length: int, dt: float) -> np.ndarray:
     t = np.arange(length, dtype=np.float32) * dt
     center = np.array((rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3), rng.uniform(0.75, 1.15)))
@@ -141,6 +165,15 @@ GENERATORS: dict[str, Callable[[np.random.Generator, int, float], np.ndarray]] =
     "lissajous": lissajous,
     "spline": quintic_waypoints,
     "straight": straight,
+}
+
+# Used only for playback.  The training bank retains the original diverse
+# trajectory distribution; playback needs a mathematically periodic reference
+# so the first and last samples join without a target jump.
+CLOSED_GENERATORS: dict[str, Callable[[np.random.Generator, int, float], np.ndarray]] = {
+    "circle": closed_circle,
+    "figure8": closed_figure_eight,
+    "spline": quintic_waypoints,
 }
 
 
