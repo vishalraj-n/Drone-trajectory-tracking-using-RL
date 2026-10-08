@@ -5,6 +5,15 @@ tracking. The actor outputs normalized CTBT commands: collective thrust and
 body roll, pitch, and yaw torques. Rotor allocation and rigid-body simulation
 are handled by the environment.
 
+### ▶ Figure-eight inference demo
+
+[**Play the figure-eight trajectory video**](https://github.com/vishalraj-n/Drone-trajectory-tracking-using-RL/raw/refs/heads/main/videos/video%20inference/figure-eight-trajectory-demo.mp4)
+
+The circle, figure-eight, and spline recordings are also available in
+[`videos/video inference`](videos/video%20inference/). GitHub does not
+autoplay repository videos inside README pages; the prominent link above
+opens the figure-eight recording directly in the browser.
+
 This project uses an existing Isaac Sim/Isaac Lab installation. It does not
 install or clone Isaac Lab. Isaac Sim and the Crazyflie asset are subject to
 their respective NVIDIA licenses.
