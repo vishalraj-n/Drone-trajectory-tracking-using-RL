@@ -17,6 +17,7 @@ __pycache__/
 .idea/
 .codex/
 .agents/
+.public-git/
 *.swp
 
 # Generated evaluation output
