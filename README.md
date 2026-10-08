@@ -70,3 +70,7 @@ Evaluate headlessly:
 ```
 
 The actor action is always normalized CTBT `[collective thrust, roll torque, pitch torque, yaw torque]`. Rotor allocation happens inside the Isaac Lab environment. The critic receives additional simulator-truth observations; those are never passed to the actor.
+
+## Demo videos
+
+Inference recordings are available in [`videos/video inference`](videos/video%20inference/). They show the trained CTBT policy tracking generated reference trajectories in Isaac Sim.
