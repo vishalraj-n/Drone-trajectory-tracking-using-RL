@@ -23,6 +23,9 @@ __pycache__/
 # Generated evaluation output
 evaluation.csv
 
+# Add inference recordings separately when desired.
+videos/inference/
+
 # Keep public demo media and selected checkpoints; ignore other experiments.
 checkpoints/*
 !checkpoints/model_250.pt
