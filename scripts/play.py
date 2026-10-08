@@ -47,8 +47,8 @@ parser.add_argument("--episodes", type=int, default=1, help="Number of episodes 
 parser.add_argument(
     "--run_forever",
     action=argparse.BooleanOptionalAction,
-    default=True,
-    help="Repeat the closed trajectory until Isaac Sim is closed (default: enabled).",
+    default=False,
+    help="Repeat the closed trajectory until Isaac Sim is closed instead of using the time limit.",
 )
 parser.add_argument("--video", action="store_true", help="Save the first inference episode as an MP4 video.")
 parser.add_argument(
@@ -94,9 +94,9 @@ def main() -> None:
     if isinstance(bank_data, np.lib.npyio.NpzFile) and "family_ids" in bank_data.files:
         family_ids = np.asarray(bank_data["family_ids"]).astype(str)
     env_cfg = CTBTTrajectoryEnvCfg()
-    # A trajectory can be periodic for many cycles.  Keep the environment in
-    # one episode during playback so DirectRLEnv does not reset the aircraft
-    # to the first waypoint every 20 seconds.
+    # The selected closed trajectory repeats during the requested playback
+    # window.  In the normal mode the timeout ends playback at 20 seconds;
+    # play.py exits on that timeout before DirectRLEnv can reset the aircraft.
     env_cfg.episode_length_s = 1_000_000.0 if args.run_forever else args.episode_seconds
     env_cfg.scene.num_envs = args.num_envs
     env_cfg.trajectory_path = str(bank_path)
@@ -114,9 +114,9 @@ def main() -> None:
     # Inference uses the selected closed trajectory as a periodic reference.
     # Because run_forever keeps one environment episode alive, wrapping the
     # reference does not reset or teleport the drone state.
-    env_cfg.trajectory_loop = args.run_forever
+    env_cfg.trajectory_loop = True
     env_cfg.allow_trajectory_hold = not args.run_forever
-    if args.run_forever and args.trajectory_type in {"circle", "figure8", "spline"}:
+    if args.trajectory_type in {"circle", "figure8", "spline"}:
         env_cfg.closed_trajectory_family = args.trajectory_type
     env_cfg.online_trajectory_generation = False
     env_cfg.terminate_on_crash = False
